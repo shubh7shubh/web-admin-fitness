@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase-server";
+import { createClient as createBrowserClient } from "@/lib/supabase-browser";
 import { Header } from "@/components/marketing/Header";
 import { Footer } from "@/components/marketing/Footer";
 import { notFound } from "next/navigation";
@@ -23,8 +24,9 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Use browser client for build-time static generation (no cookies needed)
 export async function generateStaticParams() {
-  const supabase = await createClient();
+  const supabase = createBrowserClient();
   const { data: articles } = await supabase
     .from("blog_articles")
     .select("slug")
