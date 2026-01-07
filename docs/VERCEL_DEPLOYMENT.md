@@ -484,6 +484,402 @@ If deployment fails or issues arise:
 
 ---
 
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### 1. Domain Shows "Invalid Configuration" in Vercel
+
+**Problem**: After adding `apexfit.in` and `www.apexfit.in` to Vercel, they show a red "Invalid Configuration" error.
+
+**Solution**:
+
+**For `apexfit.in` (primary domain)**:
+1. In Vercel Domains page, click on `apexfit.in`
+2. Select the **"Connect to an environment"** radio button (NOT "Redirect to Another Domain")
+3. From the "Production" dropdown, ensure **Production** is selected
+4. Click **"Save"**
+
+**For `www.apexfit.in` (www subdomain)**:
+1. Click on `www.apexfit.in`
+2. Select **"Redirect to Another Domain"** radio button
+3. Keep "307 Temporary Redirect" selected
+4. In the redirect target field, enter: `apexfit.in` (without www)
+5. Click **"Save"**
+
+**After Saving**:
+- Wait 5-10 minutes for DNS propagation
+- Refresh the Domains page
+- Both domains should show ✅ "Valid Configuration"
+
+**Common Mistake**: Setting both domains to "Redirect to Another Domain" or leaving the redirect target empty will cause "Invalid Configuration" errors.
+
+---
+
+#### 2. Google OAuth "Redirect URI Mismatch" Error
+
+**Problem**: Users get "redirect_uri_mismatch" error when trying to sign in with Google on the web app.
+
+**Solution**: Add authorized redirect URIs to your Google Cloud Console OAuth client.
+
+**Step-by-Step Fix**:
+
+1. **Go to Google Cloud Console**:
+   - Visit: https://console.cloud.google.com/
+   - Select your Firebase project: **"fitnessapp-b923d"** (or your project name)
+
+2. **Navigate to Credentials**:
+   - Left sidebar: **APIs & Services** → **Credentials**
+
+3. **Find Your OAuth 2.0 Client**:
+   - Under "OAuth 2.0 Client IDs" section
+   - Look for: **"Web client (auto created by Google Service)"**
+   - Client ID: `156928309194-c46nehfou5nupi740og0pa6ciiavpg9h.apps.googleusercontent.com`
+   - **Click on the client name** to edit
+
+4. **Add Authorized Redirect URIs**:
+   - Scroll to **"Authorized redirect URIs"** section
+   - Click **"+ ADD URI"** button
+   - Add these URIs one by one:
+     ```
+     https://apexfit.in/auth/callback
+     https://www.apexfit.in/auth/callback
+     https://oswlhrzarxjpyocgxgbr.supabase.co/auth/v1/callback
+     ```
+   - Click **"Save"** at the bottom
+
+5. **Verify in Supabase**:
+   - Go to Supabase Dashboard → Authentication → URL Configuration
+   - Ensure these redirect URLs are listed:
+     - `http://localhost:3000/auth/callback` (local dev)
+     - `https://apexfit.in/auth/callback` (production)
+     - `https://www.apexfit.in/auth/callback` (www subdomain)
+     - `https://*.vercel.app/auth/callback` (preview deployments)
+
+**Important Notes**:
+- You can use the **same Web Client ID** for both your Expo app and web app
+- The Client ID from your Firebase project works for both platforms
+- Don't create a new OAuth client - just add URIs to the existing one
+
+---
+
+#### 3. DNS Propagation Taking Too Long
+
+**Problem**: Changed nameservers in GoDaddy to Vercel, but domain still not resolving after 30+ minutes.
+
+**Solution**:
+
+1. **Verify Nameservers in GoDaddy**:
+   - Go to GoDaddy → My Products → Domains → `apexfit.in`
+   - Click **Manage DNS**
+   - Scroll to **Nameservers** section
+   - Should show:
+     - `ns1.vercel-dns.com`
+     - `ns2.vercel-dns.com`
+   - If not, update and save again
+
+2. **Check DNS Propagation Status**:
+   - Visit: https://www.whatsmydns.net/
+   - Enter: `apexfit.in`
+   - Select record type: **A**
+   - Check if Vercel's IP (`76.76.21.21`) appears across multiple locations
+   - Green checkmarks = propagated, Red X = still propagating
+
+3. **Clear Local DNS Cache**:
+   ```bash
+   # macOS
+   sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+
+   # Windows
+   ipconfig /flushdns
+
+   # Linux
+   sudo systemd-resolve --flush-caches
+   ```
+
+4. **Wait Full 48 Hours**:
+   - DNS propagation can take 5 minutes to 48 hours
+   - Typically completes within 30 minutes to 2 hours
+   - GoDaddy nameserver changes are usually faster (15-30 min)
+
+**Test Domain Status**:
+```bash
+# Check nameservers
+dig apexfit.in NS
+
+# Check A record
+dig apexfit.in A
+
+# Expected NS records:
+# apexfit.in. IN NS ns1.vercel-dns.com.
+# apexfit.in. IN NS ns2.vercel-dns.com.
+```
+
+---
+
+#### 4. Vercel Build Failing - "Cannot find module"
+
+**Problem**: Vercel deployment fails with error: `Cannot find module '@/lib/supabase-browser'` or similar.
+
+**Solution**:
+
+1. **Verify Build Settings in Vercel**:
+   - Go to Vercel Dashboard → Settings → General
+   - **Root Directory**: Must be set to `apps/web`
+   - **Framework Preset**: Next.js
+   - **Node.js Version**: 18.x or 20.x
+
+2. **Check vercel.json Configuration**:
+   - File: `/Users/apple/Documents/GitHub/fitness-web/vercel.json`
+   - Verify `buildCommand` includes `cd apps/web`
+   - Verify `outputDirectory` points to `apps/web/.next`
+
+3. **Verify Import Paths**:
+   - In `apps/web/`, imports should use `@/` alias
+   - Example: `import { createClient } from '@/lib/supabase-browser'`
+   - Check `tsconfig.json` has correct `paths` configuration
+
+4. **Trigger Rebuild**:
+   - Go to Vercel Dashboard → Deployments
+   - Click **"Redeploy"** on the failed deployment
+   - Or push a new commit to trigger rebuild
+
+**Debug Build Logs**:
+- Vercel Dashboard → Deployments → Click failed deployment
+- View full build logs
+- Search for "Error" or "MODULE_NOT_FOUND"
+
+---
+
+#### 5. Environment Variables Not Working
+
+**Problem**: App deployed successfully but Supabase connection fails, showing "Invalid API key" or undefined env vars.
+
+**Solution**:
+
+1. **Verify Environment Variables in Vercel**:
+   - Go to Vercel Dashboard → Settings → Environment Variables
+   - Check these variables exist:
+     - `NEXT_PUBLIC_SUPABASE_URL`
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+     - `NEXT_PUBLIC_SITE_URL`
+
+2. **Check Variable Scopes**:
+   - Each variable should be enabled for:
+     - ✅ Production
+     - ✅ Preview
+     - ✅ Development (optional)
+
+3. **Redeploy After Adding Variables**:
+   - Environment variables are baked into the build
+   - You **must redeploy** after adding/changing env vars
+   - Go to Deployments → Click latest deployment → **"Redeploy"**
+
+4. **Verify Variable Values**:
+   - Ensure no extra spaces in values
+   - Ensure Supabase URL starts with `https://`
+   - Ensure anon key is the public (anon) key, not service_role key
+
+**Test Locally First**:
+```bash
+# Create .env.local in apps/web/
+NEXT_PUBLIC_SUPABASE_URL=https://oswlhrzarxjpyocgxgbr.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Test build locally
+cd apps/web
+npm run build
+npm start
+```
+
+---
+
+#### 6. OAuth Login Works Locally But Not in Production
+
+**Problem**: Google OAuth login works on `localhost:3000` but fails on `https://apexfit.in`.
+
+**Checklist**:
+
+1. **Verify Supabase Site URL**:
+   - Supabase Dashboard → Authentication → URL Configuration
+   - **Site URL** should be: `https://apexfit.in` (NOT localhost)
+
+2. **Verify Google Authorized Redirect URIs**:
+   - Google Cloud Console → Credentials → OAuth 2.0 Client
+   - Must include: `https://apexfit.in/auth/callback`
+   - Must include: `https://oswlhrzarxjpyocgxgbr.supabase.co/auth/v1/callback`
+
+3. **Verify Environment Variable in Vercel**:
+   - `NEXT_PUBLIC_SITE_URL` for Production = `https://apexfit.in`
+   - Redeploy after changing
+
+4. **Check Middleware Configuration**:
+   - File: `apps/web/middleware.ts`
+   - Ensure redirect URLs use `process.env.NEXT_PUBLIC_SITE_URL`
+   - Verify matcher patterns include `/auth/callback`
+
+5. **Test OAuth Flow**:
+   - Open browser DevTools (F12) → Network tab
+   - Visit `https://apexfit.in/login`
+   - Click "Sign in with Google"
+   - Watch for redirect URLs in Network tab
+   - Look for errors in Console tab
+
+**Common Error Messages**:
+- `redirect_uri_mismatch` → Missing URI in Google Console
+- `invalid_request` → Supabase config issue
+- `CORS error` → Supabase Site URL incorrect
+
+---
+
+#### 7. www Subdomain Not Redirecting to Non-www
+
+**Problem**: `www.apexfit.in` doesn't redirect to `apexfit.in`, or shows SSL error.
+
+**Solution**:
+
+1. **Verify www Domain Configuration in Vercel**:
+   - Go to Vercel → Domains
+   - Click `www.apexfit.in`
+   - Should be set to: **"Redirect to Another Domain"**
+   - Redirect target: `apexfit.in`
+   - Redirect type: `307 Temporary Redirect`
+
+2. **Set Primary Domain**:
+   - In Vercel Domains list, find `apexfit.in`
+   - Click the **"⋯" menu** → **"Set as Primary"**
+   - This ensures www automatically redirects
+
+3. **Wait for SSL Certificate**:
+   - Vercel auto-provisions SSL for both `apexfit.in` and `www.apexfit.in`
+   - Can take 5-15 minutes after domain validation
+   - Status should show: ✅ Valid Configuration
+
+4. **Test Redirect**:
+   ```bash
+   # Test redirect
+   curl -I https://www.apexfit.in
+
+   # Should return:
+   # HTTP/2 307
+   # location: https://apexfit.in/
+   ```
+
+---
+
+#### 8. Preview Deployments Not Working
+
+**Problem**: Created PR but Vercel didn't create a preview deployment or post a comment.
+
+**Solution**:
+
+1. **Verify GitHub Integration**:
+   - Vercel Dashboard → Settings → Git
+   - Should show: Connected to `shubh7shubh/web-admin-fitness`
+   - Branch: `main`
+
+2. **Enable Preview Deployments**:
+   - Vercel → Settings → Git
+   - ✅ **Enable Automatic Deployments**
+   - Production Branch: `main`
+   - ✅ **Create Preview Deployments for all branches**
+
+3. **Enable GitHub Comments**:
+   - Vercel → Settings → Git → GitHub
+   - ✅ **Comments on Pull Requests**
+   - ✅ **Post deployment comments**
+   - ✅ **Post deployment status**
+
+4. **Check Vercel Bot Permissions**:
+   - Go to GitHub Repository → Settings → Integrations
+   - Ensure **Vercel** app has permission to:
+     - Read pull requests
+     - Write comments
+     - Update commit status
+
+5. **Manually Trigger Preview**:
+   - Go to Vercel Dashboard → Deployments
+   - Click **"Create Deployment"**
+   - Select branch with PR
+   - Click **"Deploy"**
+
+---
+
+#### 9. Admin Panel Accidentally Deployed to Vercel
+
+**Problem**: Admin panel (`apps/admin`) is accessible publicly at a Vercel URL.
+
+**Solution**:
+
+1. **Verify vercel.json Configuration**:
+   - File should only reference `apps/web`:
+   ```json
+   {
+     "builds": [
+       {
+         "src": "apps/web/package.json",
+         "use": "@vercel/next"
+       }
+     ]
+   }
+   ```
+
+2. **Remove Admin Deployment**:
+   - If admin was deployed, go to Vercel Dashboard
+   - Settings → General → **Delete Project** (for admin project only)
+
+3. **Add .vercelignore** (Optional):
+   - Create: `/Users/apple/Documents/GitHub/fitness-web/.vercelignore`
+   - Content:
+   ```
+   apps/admin
+   ```
+
+4. **Verify Build Logs**:
+   - Check Vercel deployment logs
+   - Should only show build steps for `apps/web`
+   - No references to `apps/admin`
+
+**Admin Panel Usage** (Reminder):
+```bash
+# Always run admin locally
+cd apps/admin
+npm run dev -- -p 3001
+
+# Access at: http://localhost:3001
+# Never deploy to any hosting service
+```
+
+---
+
+### Quick Reference: Domain Configuration Summary
+
+| Domain | Configuration | Purpose |
+|--------|---------------|---------|
+| `apexfit.in` | Connect to Environment → Production | Primary domain, serves web app |
+| `www.apexfit.in` | Redirect to Another Domain → `apexfit.in` | Redirects to non-www |
+| `apexfit-web.vercel.app` | Vercel default subdomain | Auto-redirects to primary domain |
+
+### Quick Reference: Required OAuth Redirect URIs
+
+**Google Cloud Console → OAuth 2.0 Client → Authorized redirect URIs**:
+```
+https://apexfit.in/auth/callback
+https://www.apexfit.in/auth/callback
+https://oswlhrzarxjpyocgxgbr.supabase.co/auth/v1/callback
+```
+
+**Supabase Dashboard → Authentication → URL Configuration → Redirect URLs**:
+```
+http://localhost:3000/auth/callback
+https://apexfit.in/auth/callback
+https://www.apexfit.in/auth/callback
+https://*.vercel.app/auth/callback
+```
+
+---
+
 ## Maintenance
 
 ### Regular Tasks
