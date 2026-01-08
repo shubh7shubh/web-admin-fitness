@@ -6,10 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog | FitnessApp - Fitness Tips & Health Articles",
-  description: "Read the latest fitness tips, nutrition advice, and health articles from the FitnessApp team.",
+  title: "Blog | ApexOne - Fitness Tips & Health Articles",
+  description: "Read the latest fitness tips, nutrition advice, and health articles from the ApexOne team.",
   openGraph: {
-    title: "FitnessApp Blog - Fitness Tips & Health Articles",
+    title: "ApexOne Blog - Fitness Tips & Health Articles",
     description: "Expert fitness tips, nutrition advice, and health articles.",
     type: "website",
   },
@@ -44,7 +44,7 @@ export default async function BlogsPage() {
           {/* Page Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Fitness Blog
+              ApexOne Blog
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Expert tips on nutrition, workouts, and healthy living to help you reach your fitness goals.
@@ -87,7 +87,7 @@ export default async function BlogsPage() {
                     
                     <CardContent>
                       <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>{article.author_name || "FitnessApp Team"}</span>
+                        <span>{article.author_name || "ApexOne Team"}</span>
                         <div className="flex items-center gap-2">
                           {article.read_time && (
                             <span>{article.read_time} min read</span>

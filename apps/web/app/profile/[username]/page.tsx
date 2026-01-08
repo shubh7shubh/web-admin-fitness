@@ -21,14 +21,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!profile) {
-    return { title: "User Not Found | FitnessApp" };
+    return { title: "User Not Found | ApexOne" };
   }
 
   return {
-    title: `${profile.full_name || profile.username} | FitnessApp`,
-    description: profile.bio || `Check out ${profile.username}'s fitness journey on FitnessApp`,
+    title: `${profile.full_name || profile.username} | ApexOne`,
+    description: profile.bio || `Check out ${profile.username}'s fitness journey on ApexOne`,
     openGraph: {
-      title: `${profile.full_name || profile.username} on FitnessApp`,
+      title: `${profile.full_name || profile.username} on ApexOne`,
       description: profile.bio || `Follow ${profile.username}'s fitness journey`,
       images: profile.avatar_url ? [profile.avatar_url] : [],
       type: "profile",
@@ -72,7 +72,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
   const handleShare = () => {
     if (typeof navigator !== "undefined" && navigator.share) {
       navigator.share({
-        title: `${profile.full_name || profile.username} on FitnessApp`,
+        title: `${profile.full_name || profile.username} on ApexOne`,
         url: window.location.href,
       });
     }
@@ -156,7 +156,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
           {/* Download App CTA */}
           <div className="bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl p-4 mb-6 text-white text-center">
             <p className="font-medium">Want to interact with {profile.username}?</p>
-            <p className="text-sm text-emerald-50">Download FitnessApp to follow, like posts, and send messages!</p>
+            <p className="text-sm text-emerald-50">Download ApexOne to follow, like posts, and send messages!</p>
           </div>
 
           {/* Posts Grid */}

@@ -11,7 +11,7 @@ export function Footer() {
               <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">F</span>
               </div>
-              <span className="font-bold text-xl">FitnessApp</span>
+              <span className="font-bold text-xl">ApexOne</span>
             </div>
             <p className="text-gray-400 max-w-md">
               Gamified fitness tracking with social features. Track calories, join challenges, 
@@ -60,7 +60,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} FitnessApp. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} ApexOne. All rights reserved.</p>
         </div>
       </div>
     </footer>

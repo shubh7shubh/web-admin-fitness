@@ -10,7 +10,7 @@ export function CTASection() {
         </h2>
         <p className="text-lg text-emerald-50 mb-8 max-w-2xl mx-auto">
           Join thousands of users already tracking their nutrition, completing challenges, 
-          and achieving their goals with FitnessApp.
+          and achieving their goals with ApexOne.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="#">
@@ -19,7 +19,7 @@ export function CTASection() {
             </Button>
           </Link>
           <Link href="#">
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg rounded-xl">
+            <Button size="lg" variant="outline" className="border-white text-blue-600 hover:bg-white/10 px-8 py-6 text-lg rounded-xl">
               Download for Android
             </Button>
           </Link>

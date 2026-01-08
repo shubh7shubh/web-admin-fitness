@@ -8,19 +8,19 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FitnessApp - Track Nutrition, Join Challenges, Get Fit",
+  title: "ApexOne - Track Nutrition, Join Challenges, Get Fit",
   description: "Gamified fitness tracking app with calorie counting, macro tracking, social challenges, and leaderboards. Download now for iOS and Android.",
   keywords: ["fitness tracker", "calorie counter", "macro tracker", "fitness app", "weight loss app", "nutrition tracker"],
   openGraph: {
-    title: "FitnessApp - Track Nutrition, Join Challenges, Get Fit",
+    title: "ApexOne - Track Nutrition, Join Challenges, Get Fit",
     description: "Gamified fitness tracking with social features. Track calories, join challenges, climb leaderboards.",
     type: "website",
     locale: "en_US",
-    siteName: "FitnessApp",
+    siteName: "ApexOne",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FitnessApp - Track Nutrition, Join Challenges, Get Fit",
+    title: "ApexOne - Track Nutrition, Join Challenges, Get Fit",
     description: "Gamified fitness tracking with social features.",
   },
   robots: {

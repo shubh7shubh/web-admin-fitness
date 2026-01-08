@@ -19,7 +19,7 @@ export default function NewBlogPage() {
     excerpt: "",
     content: "",
     featured_image: "",
-    author_name: "FitnessApp Team",
+    author_name: "ApexOne Team",
     category: "",
     tags: "",
     read_time: 5,

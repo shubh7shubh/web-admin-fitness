@@ -61,7 +61,7 @@ export function Sidebar() {
             <span className="text-white font-bold">F</span>
           </div>
           <div>
-            <h1 className="font-bold text-white">FitnessApp</h1>
+            <h1 className="font-bold text-white">ApexOne</h1>
             <p className="text-xs text-zinc-500">Admin Panel</p>
           </div>
         </div>

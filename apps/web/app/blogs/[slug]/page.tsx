@@ -47,12 +47,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!article) {
     return {
-      title: "Article Not Found | FitnessApp Blog",
+      title: "Article Not Found | ApexOne Blog",
     };
   }
 
   return {
-    title: `${article.title} | FitnessApp Blog`,
+    title: `${article.title} | ApexOne Blog`,
     description: article.excerpt,
     openGraph: {
       title: article.title,
@@ -119,7 +119,7 @@ export default async function BlogArticlePage({ params }: PageProps) {
               {typedArticle.excerpt}
             </p>
             <div className="flex items-center gap-4 text-sm text-gray-500 border-b border-gray-100 pb-6">
-              <span>{typedArticle.author_name || "FitnessApp Team"}</span>
+              <span>{typedArticle.author_name || "ApexOne Team"}</span>
               {typedArticle.published_at && (
                 <>
                   <span>•</span>
@@ -171,7 +171,7 @@ export default async function BlogArticlePage({ params }: PageProps) {
           {/* CTA */}
           <div className="mt-12 p-6 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl text-white text-center">
             <h3 className="text-xl font-bold mb-2">Ready to start your fitness journey?</h3>
-            <p className="text-emerald-50 mb-4">Download FitnessApp and track your progress today!</p>
+            <p className="text-emerald-50 mb-4">Download ApexOne and track your progress today!</p>
             <div className="flex justify-center gap-4">
               <Link href="#" className="px-6 py-2 bg-white text-emerald-600 rounded-lg font-medium hover:bg-gray-100 transition-colors">
                 Download iOS
@@ -195,11 +195,11 @@ export default async function BlogArticlePage({ params }: PageProps) {
               image: typedArticle.featured_image,
               author: {
                 "@type": "Person",
-                name: typedArticle.author_name || "FitnessApp Team",
+                name: typedArticle.author_name || "ApexOne Team",
               },
               publisher: {
                 "@type": "Organization",
-                name: "FitnessApp",
+                name: "ApexOne",
               },
               datePublished: typedArticle.published_at,
             }),

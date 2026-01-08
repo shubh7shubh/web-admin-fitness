@@ -72,7 +72,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           <CardDescription>
-            Sign in to access your FitnessApp dashboard
+            Sign in to access your ApexOne dashboard
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

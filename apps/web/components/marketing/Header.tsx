@@ -16,7 +16,7 @@ export function Header() {
             <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">F</span>
             </div>
-            <span className="font-bold text-xl text-gray-900">FitnessApp</span>
+            <span className="font-bold text-xl text-gray-900">ApexOne</span>
           </Link>
 
           {/* Desktop Navigation */}
