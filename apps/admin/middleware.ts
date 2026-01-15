@@ -77,6 +77,7 @@ export const config = {
     "/challenges/:path*",
     "/users/:path*",
     "/content/:path*",
+    "/premium-testing/:path*",
     "/login",
   ],
 };

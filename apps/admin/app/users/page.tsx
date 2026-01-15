@@ -6,17 +6,16 @@ import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Copy, Check } from "lucide-react";
 
 interface UserProfile {
   id: string;
   username: string | null;
-  email: string;
-  full_name: string | null;
   avatar_url: string | null;
   points: number;
-  rank: number | null;
-  is_banned: boolean;
-  is_admin: boolean;
+  follower_count: number;
+  following_count: number;
+  posts_count: number;
   created_at: string;
 }
 
@@ -24,6 +23,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [copiedUsername, setCopiedUsername] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -32,18 +32,23 @@ export default function UsersPage() {
   const fetchUsers = async (searchTerm?: string) => {
     setLoading(true);
     const supabase = createClient();
-    
+
     let query = supabase
       .from("profiles")
-      .select("id, username, email, full_name, avatar_url, points, rank, is_banned, is_admin, created_at")
+      .select("id, username, avatar_url, points, follower_count, following_count, posts_count, created_at")
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (searchTerm) {
-      query = query.or(`username.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,full_name.ilike.%${searchTerm}%`);
+      query = query.ilike("username", `%${searchTerm}%`);
     }
 
-    const { data } = await query;
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching users:", error);
+    }
+
     setUsers(data || []);
     setLoading(false);
   };
@@ -53,11 +58,20 @@ export default function UsersPage() {
     fetchUsers(search);
   };
 
+  const copyUsername = async (username: string | null) => {
+    if (!username) return;
+    await navigator.clipboard.writeText(username);
+    setCopiedUsername(username);
+    setTimeout(() => setCopiedUsername(null), 2000);
+  };
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white">Users</h1>
-        <p className="text-zinc-400 mt-1">Manage user accounts</p>
+        <p className="text-zinc-400 mt-1">
+          Manage user accounts {!loading && `• Showing ${users.length} users`}
+        </p>
       </div>
 
       {/* Search */}
@@ -65,7 +79,7 @@ export default function UsersPage() {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by username, email, or name..."
+          placeholder="Search by username..."
           className="bg-zinc-900 border-zinc-800 text-white max-w-md"
         />
         <Button type="submit" variant="outline" className="border-zinc-700 text-zinc-300">
@@ -90,11 +104,10 @@ export default function UsersPage() {
           <table className="w-full">
             <thead className="bg-zinc-800">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Username</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Points</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Rank</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Followers</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-400 uppercase">Posts</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-zinc-400 uppercase">Actions</th>
               </tr>
             </thead>
@@ -107,36 +120,31 @@ export default function UsersPage() {
                         <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-white text-xs font-bold">
-                          {(user.username || user.email)[0].toUpperCase()}
+                          {(user.username || "?")[0].toUpperCase()}
                         </div>
                       )}
                       <div>
-                        <p className="text-white font-medium">{user.full_name || user.username || "No name"}</p>
-                        <p className="text-xs text-zinc-500">@{user.username || "no-username"}</p>
+                        {user.username ? (
+                          <button
+                            onClick={() => copyUsername(user.username)}
+                            className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors group"
+                          >
+                            <span className="font-mono text-sm">@{user.username}</span>
+                            {copiedUsername === user.username ? (
+                              <Check className="w-4 h-4 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-zinc-600 text-sm">No username</span>
+                        )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-zinc-400 text-sm">{user.email}</td>
                   <td className="px-6 py-4 text-zinc-300">{user.points}</td>
-                  <td className="px-6 py-4 text-zinc-400">#{user.rank || "-"}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {user.is_admin && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400">
-                          Admin
-                        </span>
-                      )}
-                      {user.is_banned ? (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-500/20 text-red-400">
-                          Banned
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-400">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                  </td>
+                  <td className="px-6 py-4 text-zinc-400">{user.follower_count}</td>
+                  <td className="px-6 py-4 text-zinc-400">{user.posts_count}</td>
                   <td className="px-6 py-4 text-right">
                     <Link href={`/users/${user.id}`}>
                       <Button variant="outline" size="sm" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">

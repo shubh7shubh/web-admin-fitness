@@ -27,12 +27,15 @@ export function Header() {
             <Link href="/blogs" className="text-gray-600 hover:text-gray-900 transition-colors">
               Blog
             </Link>
+            <Link href="/premium" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Plan
+            </Link>
             <Link href="/login">
               <Button variant="outline" size="sm">
                 Login
               </Button>
             </Link>
-            <Link href="#download">
+            <Link href="/onboarding">
               <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
                 Download App
               </Button>
@@ -70,12 +73,15 @@ export function Header() {
               <Link href="/blogs" className="text-gray-600 hover:text-gray-900 transition-colors">
                 Blog
               </Link>
+              <Link href="/premium" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Plan
+              </Link>
               <Link href="/login">
                 <Button variant="outline" size="sm" className="w-full">
                   Login
                 </Button>
               </Link>
-              <Link href="#download">
+              <Link href="/onboarding">
                 <Button size="sm" className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500">
                   Download App
                 </Button>

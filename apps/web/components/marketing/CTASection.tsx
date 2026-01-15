@@ -13,12 +13,12 @@ export function CTASection() {
           and achieving their goals with ApexOne.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="#">
+          <Link href="/onboarding">
             <Button size="lg" className="bg-white text-emerald-600 hover:bg-gray-100 px-8 py-6 text-lg rounded-xl">
               Download for iOS
             </Button>
           </Link>
-          <Link href="#">
+          <Link href="/onboarding">
             <Button size="lg" variant="outline" className="border-white text-blue-600 hover:bg-white/10 px-8 py-6 text-lg rounded-xl">
               Download for Android
             </Button>

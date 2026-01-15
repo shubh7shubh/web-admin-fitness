@@ -32,4 +32,10 @@ export const queryKeys = {
   adminAnalytics: () => ['admin-analytics'] as const,
   adminUsers: (search?: string) => ['admin-users', search] as const,
   adminUser: (userId: string) => ['admin-user', userId] as const,
+
+  // Premium Feature Keys
+  premiumStatus: (userId: string) => ['premium-status', userId] as const,
+  premiumAssessment: (userId: string) => ['premium-assessment', userId] as const,
+  dietPlan: (userId: string) => ['diet-plan', userId] as const,
+  workoutPlan: (userId: string) => ['workout-plan', userId] as const,
 };

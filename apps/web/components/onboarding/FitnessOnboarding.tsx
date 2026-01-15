@@ -381,9 +381,9 @@ const FitnessOnboarding: React.FC<OnboardingProps> = ({ onComplete, personalInfo
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-orange-50 via-white to-red-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 overflow-hidden">
       {/* Progress Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-800">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-800 z-10">
         <motion.div
           className="h-full bg-gradient-to-r from-orange-500 to-red-500"
           initial={{ width: 0 }}
@@ -392,11 +392,14 @@ const FitnessOnboarding: React.FC<OnboardingProps> = ({ onComplete, personalInfo
         />
       </div>
 
-      {/* Content Container - Mobile Optimized */}
-      <div className="h-full overflow-y-auto">
-        <div>
-          {/* Header */}
-          <div className="pt-2 pb-1 px-6">
+      {/* Desktop: Centered Card Layout, Mobile: Full Screen */}
+      <div className="h-full flex items-center justify-center overflow-y-auto lg:p-8">
+        <div className="w-full h-full lg:h-auto lg:max-w-lg lg:rounded-3xl lg:shadow-2xl bg-white dark:bg-gray-900 lg:border lg:border-gray-200 dark:lg:border-gray-800 overflow-hidden">
+          {/* Content Container */}
+          <div className="h-full lg:h-auto overflow-y-auto lg:max-h-[90vh]">
+            <div>
+              {/* Header */}
+              <div className="pt-2 pb-1 px-6">
             <motion.div
               key={currentStep}
               initial={{ opacity: 0, y: -20 }}
@@ -432,39 +435,41 @@ const FitnessOnboarding: React.FC<OnboardingProps> = ({ onComplete, personalInfo
 
           {/* Footer */}
           <div className="px-6 pb-4 pt-1 bg-white dark:bg-gray-900">
-          <div className="max-w-md mx-auto space-y-2">
-            {/* Next Button */}
-            <button
-              onClick={handleNext}
-              className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform shadow-lg flex items-center justify-center gap-2"
-            >
-              {currentStep === steps.length - 1 ? (
-                <>
-                  <Download className="w-5 h-5" />
-                  Get Beta Access
-                </>
-              ) : (
-                <>
-                  Continue
-                  <ChevronRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
+            <div className="max-w-md mx-auto space-y-2">
+              {/* Next Button */}
+              <button
+                onClick={handleNext}
+                className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform shadow-lg flex items-center justify-center gap-2"
+              >
+                {currentStep === steps.length - 1 ? (
+                  <>
+                    <Download className="w-5 h-5" />
+                    Get Beta Access
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ChevronRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
 
-            {/* Step Indicator */}
-            <div className="flex justify-center gap-2">
-              {steps.map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`h-2 rounded-full transition-all ${
-                    idx === currentStep
-                      ? 'w-8 bg-gradient-to-r from-orange-600 to-red-600'
-                      : 'w-2 bg-gray-300 dark:bg-gray-700'
-                  }`}
-                />
-              ))}
+              {/* Step Indicator */}
+              <div className="flex justify-center gap-2">
+                {steps.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`h-2 rounded-full transition-all ${
+                      idx === currentStep
+                        ? 'w-8 bg-gradient-to-r from-orange-600 to-red-600'
+                        : 'w-2 bg-gray-300 dark:bg-gray-700'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
+            </div>
           </div>
         </div>
       </div>
