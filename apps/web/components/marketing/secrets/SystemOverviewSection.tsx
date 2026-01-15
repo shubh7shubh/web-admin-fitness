@@ -27,6 +27,13 @@ const steps = [
     description: 'Log meals in seconds. Follow your workout plan. Watch your body change.',
     detail: 'Join the community of transformers',
   },
+  {
+    icon: Shield,
+    number: 4,
+    title: 'Money-Back Guarantee',
+    description: 'Not seeing results? Get a full refund. Zero risk, all reward.',
+    detail: 'We stand behind our system 100%',
+  },
 ];
 
 const features = [
@@ -72,7 +79,7 @@ export function SystemOverviewSection() {
             How ApexOne Makes It Stupid Simple
           </h2>
           <p className="text-lg text-gray-600">
-            Three steps to unlock the secrets and start transforming
+            Four steps to unlock the secrets and start transforming
           </p>
         </motion.div>
 
@@ -151,7 +158,7 @@ export function SystemOverviewSection() {
           className="text-center"
         >
           <p className="text-xl font-semibold text-gray-900 mb-6">
-            Join 1,000+ People Transforming Right Now
+         Be Among the First to Transform
           </p>
           <Link href="/onboarding">
             <Button

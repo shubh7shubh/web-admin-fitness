@@ -14,7 +14,7 @@ export function SecretHeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-red-900">
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-red-900">
       {/* Animated background particles */}
       <div className="absolute inset-0 opacity-20">
         {mounted && [...Array(20)].map((_, i) => (

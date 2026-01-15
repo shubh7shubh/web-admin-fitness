@@ -103,27 +103,27 @@ export function FinalConversionSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="space-y-4 mb-12"
+          className="space-y-16 mb-16"
         >
           {/* Primary CTA */}
           <Link href="/onboarding">
             <Button
               size="lg"
-              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-12 py-8 text-xl rounded-xl font-bold shadow-2xl shadow-orange-500/50 transition-all hover:scale-105 flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 sm:px-12 py-4 sm:py-6 text-base sm:text-xl rounded-xl font-bold shadow-2xl shadow-orange-500/50 transition-all hover:scale-105 flex items-center justify-center gap-2 sm:gap-3"
             >
-              <Sparkles className="w-6 h-6" />
-              Reveal All 12 Secrets + Start Transforming
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+              <span className="text-center">Reveal All 12 Secrets + Start Transforming</span>
             </Button>
           </Link>
 
           {/* Secondary CTA */}
-          <Link href="/download">
+          <Link href="/download" className="flex justify-center">
             <Button
               size="lg"
               variant="outline"
-              className="w-full border-2 border-gray-400 text-gray-300 hover:bg-white/10 px-12 py-6 text-lg rounded-xl flex items-center justify-center gap-2"
+              className="border-2 border-gray-400 text-gray-300 hover:bg-white/10 px-6 py-3 text-base rounded-xl flex items-center justify-center gap-2"
             >
-              <Download className="w-5 h-5" />
+              <Download className="w-4 h-4" />
               Just Download the App
             </Button>
           </Link>

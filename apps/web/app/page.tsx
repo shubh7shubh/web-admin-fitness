@@ -10,7 +10,7 @@ import {
 
 export default function Home() {
   return (
-    <>
+    <div className="min-h-screen">
       <Header />
       <main>
         <SecretHeroSection />
@@ -46,6 +46,6 @@ export default function Home() {
           }),
         }}
       />
-    </>
+    </div>
   );
 }
