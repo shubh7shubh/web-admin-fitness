@@ -14,19 +14,19 @@ export function SecretHeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-red-900">
+    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-red-900 overflow-hidden">
       {/* Animated background particles */}
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-20 overflow-hidden">
         {mounted && [...Array(20)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-orange-500 rounded-full"
             initial={{
-              x: Math.random() * window.innerWidth,
-              y: Math.random() * window.innerHeight,
+              x: Math.random() * (window.innerWidth - 20),
+              y: Math.random() * (window.innerHeight - 20),
             }}
             animate={{
-              y: [null, Math.random() * window.innerHeight],
+              y: [null, Math.random() * (window.innerHeight - 20)],
               opacity: [0, 1, 0],
             }}
             transition={{
