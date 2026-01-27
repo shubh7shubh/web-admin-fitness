@@ -86,7 +86,30 @@ export interface PremiumAssessment {
   // Admin fields
   admin_notes?: string;
 
+  // Custom answers for dynamically added questions
+  custom_answers?: Record<string, any>;
+
   // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssessmentQuestion {
+  id: string;
+  field_key: string;
+  label: string;
+  section: "general" | "nutrition" | "workout";
+  field_type: "textarea" | "select" | "number";
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+  is_required: boolean;
+  max_length?: number;
+  min_value?: number;
+  max_value?: number;
+  sort_order: number;
+  is_active: boolean;
+  is_legacy: boolean;
+  default_value?: string;
   created_at: string;
   updated_at: string;
 }

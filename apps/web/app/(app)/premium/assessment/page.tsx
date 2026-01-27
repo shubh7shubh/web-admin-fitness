@@ -3,31 +3,67 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  premiumAssessmentSchema,
-  type PremiumAssessmentData,
-} from "@/shared/validation/premiumAssessment";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { usePremiumStatus } from "@/lib/hooks/usePremiumStatus";
 import { createClient } from "@/lib/supabase-browser";
 
+interface QuestionOption {
+  value: string;
+  label: string;
+}
+
+interface AssessmentQuestion {
+  id: string;
+  field_key: string;
+  label: string;
+  section: "general" | "nutrition" | "workout";
+  field_type: "textarea" | "select" | "number";
+  placeholder?: string;
+  options?: QuestionOption[];
+  is_required: boolean;
+  max_length?: number;
+  min_value?: number;
+  max_value?: number;
+  sort_order: number;
+  is_active: boolean;
+  is_legacy: boolean;
+  default_value?: string;
+}
+
+// The 10 legacy field keys that the existing RPC accepts
+const RPC_HANDLED_KEYS = [
+  "fitness_goals",
+  "dietary_preferences",
+  "health_conditions",
+  "activity_level",
+  "meal_frequency",
+  "favorite_foods",
+  "foods_to_avoid",
+  "workout_experience",
+  "available_equipment",
+  "time_availability",
+];
+
+const SECTION_LABELS: Record<string, string> = {
+  general: "General Information",
+  nutrition: "Nutrition Preferences",
+  workout: "Workout Preferences",
+};
+
 export default function AssessmentPage() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<any>(null);
-  const { data: premiumStatus, isLoading: statusLoading } = usePremiumStatus(user?.id);
+  const { data: premiumStatus, isLoading: statusLoading } =
+    usePremiumStatus(user?.id);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<PremiumAssessmentData>>({
-    activity_level: "moderately_active",
-    workout_experience: "beginner",
-    time_availability: "30min",
-    primary_workout_goal: "general_fitness",
-    cardio_preference: "minimal",
-    workout_environment: "commercial_gym",
-  });
+  const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [formData, setFormData] = useState<Record<string, any>>({});
 
+  // Fetch user
   useEffect(() => {
     const getUser = async () => {
       const {
@@ -38,24 +74,58 @@ export default function AssessmentPage() {
     getUser();
   }, [supabase.auth]);
 
-  // Protect assessment form - redirect if user already has assessment or is in upsell state
+  // Fetch questions from database
+  useEffect(() => {
+    const loadQuestions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("assessment_questions")
+          .select("*")
+          .eq("is_active", true)
+          .order("section", { ascending: true })
+          .order("sort_order", { ascending: true });
+
+        if (error) throw error;
+
+        if (data) {
+          setQuestions(data);
+          // Initialize form with default values
+          const defaults: Record<string, any> = {};
+          for (const q of data) {
+            if (q.default_value) {
+              defaults[q.field_key] =
+                q.field_type === "number"
+                  ? parseInt(q.default_value)
+                  : q.default_value;
+            }
+          }
+          setFormData(defaults);
+        }
+      } catch (err) {
+        console.error("Failed to load assessment questions:", err);
+      } finally {
+        setQuestionsLoading(false);
+      }
+    };
+    loadQuestions();
+  }, [supabase]);
+
+  // Protect assessment form
   useEffect(() => {
     if (!premiumStatus || !user) return;
-
     const { gatekeeper_state } = premiumStatus;
-
-    // If user is in upsell state (free user), redirect to premium page
-    if (gatekeeper_state === "upsell") {
+    if (
+      gatekeeper_state === "upsell" ||
+      gatekeeper_state === "pending" ||
+      gatekeeper_state === "active"
+    ) {
       router.push("/premium");
-      return;
-    }
-
-    // If user already submitted assessment (pending or active), redirect to premium page
-    if (gatekeeper_state === "pending" || gatekeeper_state === "active") {
-      router.push("/premium");
-      return;
     }
   }, [premiumStatus, router, user]);
+
+  const updateField = (fieldKey: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [fieldKey]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,35 +133,100 @@ export default function AssessmentPage() {
     setError(null);
 
     try {
-      // Validate form data
-      const validatedData = premiumAssessmentSchema.parse(formData);
+      // Validate required fields
+      const missingRequired = questions
+        .filter((q) => q.is_required && q.is_active)
+        .filter((q) => {
+          const val = formData[q.field_key];
+          return val === undefined || val === null || val === "";
+        })
+        .map((q) => q.label);
 
-      const supabase = createClient();
+      if (missingRequired.length > 0) {
+        setError(`Please fill required fields: ${missingRequired.join(", ")}`);
+        setLoading(false);
+        return;
+      }
 
-      // Call RPC function directly (matches Expo app)
-      const { data: assessmentId, error: rpcError } = await supabase.rpc(
+      // Validate text field lengths
+      for (const q of questions) {
+        if (q.field_type === "textarea" && q.max_length) {
+          const val = formData[q.field_key];
+          if (val && typeof val === "string" && val.length > q.max_length) {
+            setError(`${q.label} must be at most ${q.max_length} characters`);
+            setLoading(false);
+            return;
+          }
+        }
+        if (q.field_type === "textarea" && q.is_required && q.field_key === "fitness_goals") {
+          const val = formData[q.field_key];
+          if (val && typeof val === "string" && val.length < 10) {
+            setError(`${q.label} must be at least 10 characters`);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Separate legacy RPC fields from other fields
+      const rpcParams: Record<string, any> = {};
+      const remainingLegacy: Record<string, any> = {};
+      const customAnswers: Record<string, any> = {};
+
+      for (const q of questions) {
+        const val = formData[q.field_key];
+        if (val === undefined || val === "") continue;
+
+        if (q.is_legacy) {
+          if (RPC_HANDLED_KEYS.includes(q.field_key)) {
+            rpcParams[q.field_key] = val;
+          } else {
+            remainingLegacy[q.field_key] = val;
+          }
+        } else {
+          customAnswers[q.field_key] = val;
+        }
+      }
+
+      // Step 1: Call existing RPC with legacy fields
+      const { error: rpcError } = await supabase.rpc(
         "submit_premium_assessment",
         {
-          p_fitness_goals: validatedData.fitness_goals,
-          p_dietary_preferences: validatedData.dietary_preferences || null,
-          p_health_conditions: validatedData.health_conditions || null,
-          p_activity_level: validatedData.activity_level,
-          p_meal_frequency: validatedData.meal_frequency || null,
-          p_favorite_foods: validatedData.favorite_foods || null,
-          p_foods_to_avoid: validatedData.foods_to_avoid || null,
-          p_workout_experience: validatedData.workout_experience,
-          p_available_equipment: validatedData.available_equipment || null,
-          p_time_availability: validatedData.time_availability,
+          p_fitness_goals: rpcParams.fitness_goals || "",
+          p_dietary_preferences: rpcParams.dietary_preferences || null,
+          p_health_conditions: rpcParams.health_conditions || null,
+          p_activity_level: rpcParams.activity_level || "moderately_active",
+          p_meal_frequency: rpcParams.meal_frequency || null,
+          p_favorite_foods: rpcParams.favorite_foods || null,
+          p_foods_to_avoid: rpcParams.foods_to_avoid || null,
+          p_workout_experience: rpcParams.workout_experience || "beginner",
+          p_available_equipment: rpcParams.available_equipment || null,
+          p_time_availability: rpcParams.time_availability || "30min",
         }
       );
 
       if (rpcError) throw rpcError;
 
-      // Redirect to premium page (will show pending view)
+      // Step 2: Update remaining legacy fields + custom answers
+      const hasRemaining = Object.keys(remainingLegacy).length > 0;
+      const hasCustom = Object.keys(customAnswers).length > 0;
+
+      if (hasRemaining || hasCustom) {
+        const updatePayload: Record<string, any> = { ...remainingLegacy };
+        if (hasCustom) {
+          updatePayload.custom_answers = customAnswers;
+        }
+
+        await supabase
+          .from("premium_assessments")
+          .update(updatePayload)
+          .eq("user_id", user.id)
+          .eq("status", "pending");
+      }
+
       router.push("/premium");
     } catch (err: any) {
       if (err.errors) {
-        // Zod validation error
         setError(err.errors[0]?.message || "Please fill all required fields");
       } else {
         setError(err.message || "Something went wrong");
@@ -102,18 +237,23 @@ export default function AssessmentPage() {
     }
   };
 
-  const updateField = (field: keyof PremiumAssessmentData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // Show loading while checking premium status
-  if (statusLoading || !user) {
+  // Show loading while checking premium status or loading questions
+  if (statusLoading || !user || questionsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
       </div>
     );
   }
+
+  // Group questions by section
+  const sections = ["general", "nutrition", "workout"];
+  const grouped = sections
+    .map((sec) => ({
+      section: sec,
+      questions: questions.filter((q) => q.section === sec),
+    }))
+    .filter((g) => g.questions.length > 0);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -138,329 +278,21 @@ export default function AssessmentPage() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-8">
-          {/* General Section */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              General Information
-            </h2>
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-2xl shadow-lg p-8"
+        >
+          {grouped.map((group) => (
+            <div key={group.section} className="mb-10">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                {SECTION_LABELS[group.section] || group.section}
+              </h2>
 
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  What are your fitness goals? *
-                </label>
-                <textarea
-                  value={formData.fitness_goals || ""}
-                  onChange={(e) => updateField("fitness_goals", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  rows={4}
-                  placeholder="e.g., Lose 10kg, build muscle, improve endurance..."
-                  maxLength={500}
-                  required
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  {formData.fitness_goals?.length || 0}/500 characters
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Activity Level *
-                </label>
-                <select
-                  value={formData.activity_level || ""}
-                  onChange={(e) => updateField("activity_level", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  required
-                >
-                  <option value="sedentary">Sedentary (little to no exercise)</option>
-                  <option value="lightly_active">Lightly Active (1-3 days/week)</option>
-                  <option value="moderately_active">Moderately Active (3-5 days/week)</option>
-                  <option value="very_active">Very Active (6-7 days/week)</option>
-                  <option value="extremely_active">Extremely Active (physical job + training)</option>
-                </select>
+              <div className="space-y-6">
+                {group.questions.map((q) => renderField(q, formData, updateField))}
               </div>
             </div>
-          </div>
-
-          {/* Nutrition Section */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Nutrition Preferences
-            </h2>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Dietary Preferences
-                </label>
-                <textarea
-                  value={formData.dietary_preferences || ""}
-                  onChange={(e) =>
-                    updateField("dietary_preferences", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  rows={3}
-                  placeholder="e.g., Vegetarian, Vegan, Keto, No restrictions..."
-                  maxLength={1000}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Health Conditions or Allergies
-                </label>
-                <textarea
-                  value={formData.health_conditions || ""}
-                  onChange={(e) =>
-                    updateField("health_conditions", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  rows={3}
-                  placeholder="e.g., Diabetes, lactose intolerance, nut allergies..."
-                  maxLength={1000}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Meal Frequency
-                </label>
-                <input
-                  type="number"
-                  value={formData.meal_frequency || ""}
-                  onChange={(e) =>
-                    updateField("meal_frequency", parseInt(e.target.value))
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  min={1}
-                  max={10}
-                  placeholder="e.g., 3 (meals per day)"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Favorite Foods
-                </label>
-                <textarea
-                  value={formData.favorite_foods || ""}
-                  onChange={(e) => updateField("favorite_foods", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  rows={3}
-                  placeholder="e.g., Chicken, rice, eggs, broccoli..."
-                  maxLength={1000}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Foods to Avoid
-                </label>
-                <textarea
-                  value={formData.foods_to_avoid || ""}
-                  onChange={(e) => updateField("foods_to_avoid", e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  rows={3}
-                  placeholder="e.g., Dairy, gluten, seafood..."
-                  maxLength={1000}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Workout Section */}
-          <div className="mb-10">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Workout Preferences
-            </h2>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Workout Experience *
-                </label>
-                <select
-                  value={formData.workout_experience || ""}
-                  onChange={(e) =>
-                    updateField("workout_experience", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  required
-                >
-                  <option value="beginner">Beginner (0-1 years)</option>
-                  <option value="intermediate">Intermediate (1-3 years)</option>
-                  <option value="advanced">Advanced (3+ years)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Available Equipment
-                </label>
-                <textarea
-                  value={formData.available_equipment || ""}
-                  onChange={(e) =>
-                    updateField("available_equipment", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  rows={3}
-                  placeholder="e.g., Dumbbells, resistance bands, gym membership, none..."
-                  maxLength={500}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Time Availability per Workout *
-                </label>
-                <select
-                  value={formData.time_availability || ""}
-                  onChange={(e) =>
-                    updateField("time_availability", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  required
-                >
-                  <option value="15min">15 minutes</option>
-                  <option value="30min">30 minutes</option>
-                  <option value="45min">45 minutes</option>
-                  <option value="60min_plus">60+ minutes</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Workout Days per Week
-                </label>
-                <input
-                  type="number"
-                  value={formData.workout_days_per_week || ""}
-                  onChange={(e) =>
-                    updateField("workout_days_per_week", parseInt(e.target.value))
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  min={1}
-                  max={7}
-                  placeholder="e.g., 4"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Workout Split
-                </label>
-                <select
-                  value={formData.preferred_workout_split || ""}
-                  onChange={(e) =>
-                    updateField("preferred_workout_split", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                >
-                  <option value="">Select a split</option>
-                  <option value="full_body">Full Body</option>
-                  <option value="upper_lower">Upper/Lower</option>
-                  <option value="push_pull_legs">Push/Pull/Legs</option>
-                  <option value="body_part">Body Part Split</option>
-                  <option value="no_preference">No Preference</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Primary Workout Goal *
-                </label>
-                <select
-                  value={formData.primary_workout_goal || ""}
-                  onChange={(e) =>
-                    updateField("primary_workout_goal", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  required
-                >
-                  <option value="muscle_gain">Muscle Gain</option>
-                  <option value="strength">Strength</option>
-                  <option value="fat_loss">Fat Loss</option>
-                  <option value="endurance">Endurance</option>
-                  <option value="general_fitness">General Fitness</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cardio Preference *
-                </label>
-                <select
-                  value={formData.cardio_preference || ""}
-                  onChange={(e) =>
-                    updateField("cardio_preference", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  required
-                >
-                  <option value="none">None</option>
-                  <option value="minimal">Minimal</option>
-                  <option value="moderate">Moderate</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Workout Limitations
-                </label>
-                <textarea
-                  value={formData.workout_limitations || ""}
-                  onChange={(e) =>
-                    updateField("workout_limitations", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  rows={3}
-                  placeholder="e.g., Lower back pain, knee injury, shoulder issues..."
-                  maxLength={1000}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Workout Environment *
-                </label>
-                <select
-                  value={formData.workout_environment || ""}
-                  onChange={(e) =>
-                    updateField("workout_environment", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  required
-                >
-                  <option value="home">Home</option>
-                  <option value="commercial_gym">Commercial Gym</option>
-                  <option value="both">Both</option>
-                  <option value="outdoor">Outdoor</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Workout Time
-                </label>
-                <select
-                  value={formData.preferred_workout_time || ""}
-                  onChange={(e) =>
-                    updateField("preferred_workout_time", e.target.value)
-                  }
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                >
-                  <option value="">Select a time</option>
-                  <option value="morning">Morning</option>
-                  <option value="afternoon">Afternoon</option>
-                  <option value="evening">Evening</option>
-                  <option value="flexible">Flexible</option>
-                </select>
-              </div>
-            </div>
-          </div>
+          ))}
 
           {/* Error Message */}
           {error && (
@@ -485,4 +317,88 @@ export default function AssessmentPage() {
       </div>
     </div>
   );
+}
+
+function renderField(
+  question: AssessmentQuestion,
+  formData: Record<string, any>,
+  updateField: (key: string, value: any) => void
+) {
+  const inputClasses =
+    "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent";
+
+  switch (question.field_type) {
+    case "textarea":
+      return (
+        <div key={question.field_key}>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {question.label} {question.is_required && "*"}
+          </label>
+          <textarea
+            value={formData[question.field_key] || ""}
+            onChange={(e) => updateField(question.field_key, e.target.value)}
+            className={inputClasses}
+            rows={question.field_key === "fitness_goals" ? 4 : 3}
+            placeholder={question.placeholder || ""}
+            maxLength={question.max_length || undefined}
+            required={question.is_required}
+          />
+          {question.max_length && (
+            <p className="mt-1 text-sm text-gray-500">
+              {(formData[question.field_key] as string)?.length || 0}/
+              {question.max_length} characters
+            </p>
+          )}
+        </div>
+      );
+
+    case "select":
+      return (
+        <div key={question.field_key}>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {question.label} {question.is_required && "*"}
+          </label>
+          <select
+            value={formData[question.field_key] || ""}
+            onChange={(e) => updateField(question.field_key, e.target.value)}
+            className={inputClasses}
+            required={question.is_required}
+          >
+            {!question.is_required && <option value="">Select...</option>}
+            {(question.options || []).map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+
+    case "number":
+      return (
+        <div key={question.field_key}>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {question.label} {question.is_required && "*"}
+          </label>
+          <input
+            type="number"
+            value={formData[question.field_key] ?? ""}
+            onChange={(e) =>
+              updateField(
+                question.field_key,
+                e.target.value ? parseInt(e.target.value) : null
+              )
+            }
+            className={inputClasses}
+            min={question.min_value ?? undefined}
+            max={question.max_value ?? undefined}
+            placeholder={question.placeholder || ""}
+            required={question.is_required}
+          />
+        </div>
+      );
+
+    default:
+      return null;
+  }
 }
