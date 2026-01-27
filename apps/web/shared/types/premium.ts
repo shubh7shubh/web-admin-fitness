@@ -7,51 +7,73 @@ export interface PremiumStatus {
   has_active_workout_plan: boolean;
 }
 
+export type DayOfWeek =
+  | "monday" | "tuesday" | "wednesday" | "thursday"
+  | "friday" | "saturday" | "sunday";
+
+export type MuscleGroup =
+  | "chest" | "back" | "shoulders" | "biceps" | "triceps"
+  | "forearms" | "abs" | "obliques" | "quadriceps" | "hamstrings"
+  | "glutes" | "calves" | "cardio";
+
+export interface DietPlanMeal {
+  meal_number: number;
+  meal_type: "breakfast" | "lunch" | "dinner" | "snacks";
+  timing: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  ingredients?: string[];
+  instructions?: string;
+}
+
 export interface DietPlan {
   id: string;
   user_id: string;
+  plan_name: string;
+  start_date: string;
+  duration_weeks: number;
+  current_week: number;
+  current_day: number;
   plan_data: {
-    weeks: Array<{
-      week_number: number;
-      days: Array<{
-        day_number: number;
-        date: string;
-        meals: Array<{
-          meal_type: "breakfast" | "lunch" | "dinner" | "snack";
-          meal_name: string;
-          calories: number;
-          protein: number;
-          carbs: number;
-          fat: number;
-          ingredients?: string[];
-          instructions?: string;
-        }>;
-      }>;
-    }>;
+    meals: DietPlanMeal[];
   };
   created_at: string;
   updated_at: string;
 }
 
+export interface WorkoutExercise {
+  name: string;
+  sets: number;
+  reps: string;
+  rest_seconds: number;
+  weight?: string;
+  instructions?: string;
+}
+
+export interface MuscleGroupSection {
+  name: MuscleGroup;
+  exercises: WorkoutExercise[];
+}
+
+export interface TrainingDay {
+  day_of_week: DayOfWeek;
+  day_label: string;
+  muscle_groups: MuscleGroupSection[];
+}
+
 export interface WorkoutPlan {
   id: string;
   user_id: string;
-  routine_data: {  // Correct field name for workout_plans table
-    weeks: Array<{
-      week_number: number;
-      days: Array<{
-        day_number: number;
-        day_name: string;
-        exercises: Array<{
-          exercise_name: string;
-          sets: number;
-          reps: string;
-          rest_seconds: number;
-          notes?: string;
-          video_url?: string;
-        }>;
-      }>;
-    }>;
+  plan_name: string;
+  start_date: string;
+  duration_weeks: number;
+  current_week: number;
+  current_day: number;
+  routine_data: {
+    training_days: TrainingDay[];
   };
   created_at: string;
   updated_at: string;

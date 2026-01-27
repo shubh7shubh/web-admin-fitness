@@ -90,20 +90,16 @@ async function setToPendingState(userId: string) {
   });
 }
 
-// Make premium, set assessment to active, create sample plans
+// Make premium, set assessment to active, keep existing plans or create samples
 async function setToActiveState(userId: string) {
-  // Delete existing data
-  await supabaseAdmin.from("diet_plans").delete().eq("user_id", userId);
-  await supabaseAdmin.from("workout_plans").delete().eq("user_id", userId);
-  await supabaseAdmin.from("premium_assessments").delete().eq("user_id", userId);
-
   // Set subscription_tier to 'premium'
   await supabaseAdmin
     .from("profiles")
     .update({ subscription_tier: "premium" })
     .eq("id", userId);
 
-  // Create active assessment (using correct DB fields)
+  // Delete existing assessments and create active one
+  await supabaseAdmin.from("premium_assessments").delete().eq("user_id", userId);
   await supabaseAdmin.from("premium_assessments").insert({
     user_id: userId,
     status: "active",
@@ -111,31 +107,50 @@ async function setToActiveState(userId: string) {
     activity_level: "moderately_active",
     workout_experience: "intermediate",
     time_availability: "45min",
-    // Add required fields with defaults
     primary_workout_goal: "general_fitness",
     cardio_preference: "minimal",
     workout_environment: "commercial_gym",
   });
 
-  // Create minimal diet plan
-  const { minimalDietPlan } = await import("@/lib/templates/dietTemplates");
-  await supabaseAdmin.from("diet_plans").insert({
-    user_id: userId,
-    plan_name: "Test Diet Plan",
-    start_date: new Date().toISOString().split("T")[0],
-    duration_weeks: 1,
-    plan_data: minimalDietPlan,
-    is_active: true,
-  });
+  // Check if user already has an active diet plan
+  const { data: existingDietPlan } = await supabaseAdmin
+    .from("diet_plans")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .maybeSingle();
 
-  // Create minimal workout plan (using routine_data field)
-  const { minimalWorkoutPlan } = await import("@/lib/templates/workoutTemplates");
-  await supabaseAdmin.from("workout_plans").insert({
-    user_id: userId,
-    plan_name: "Test Workout Plan",
-    start_date: new Date().toISOString().split("T")[0],
-    duration_weeks: 1,
-    routine_data: minimalWorkoutPlan, // Correct field name for workout_plans
-    is_active: true,
-  });
+  // Only create sample diet plan if none exists
+  if (!existingDietPlan) {
+    const { minimalDietPlan } = await import("@/lib/templates/dietTemplates");
+    await supabaseAdmin.from("diet_plans").insert({
+      user_id: userId,
+      plan_name: "Test Diet Plan",
+      start_date: new Date().toISOString().split("T")[0],
+      duration_weeks: 4,
+      plan_data: minimalDietPlan,
+      is_active: true,
+    });
+  }
+
+  // Check if user already has an active workout plan
+  const { data: existingWorkoutPlan } = await supabaseAdmin
+    .from("workout_plans")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  // Only create sample workout plan if none exists
+  if (!existingWorkoutPlan) {
+    const { minimalWorkoutPlan } = await import("@/lib/templates/workoutTemplates");
+    await supabaseAdmin.from("workout_plans").insert({
+      user_id: userId,
+      plan_name: "Test Workout Plan",
+      start_date: new Date().toISOString().split("T")[0],
+      duration_weeks: 4,
+      routine_data: minimalWorkoutPlan,
+      is_active: true,
+    });
+  }
 }

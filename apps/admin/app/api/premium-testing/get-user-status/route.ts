@@ -52,22 +52,24 @@ export async function GET(request: NextRequest) {
       console.error("Assessment query error:", assessmentError);
     }
 
-    // Check for diet plan
+    // Check for active diet plan
     const { data: dietPlan, error: dietError } = await supabaseAdmin
       .from("diet_plans")
       .select("id")
       .eq("user_id", userId)
+      .eq("is_active", true)
       .maybeSingle();
 
     if (dietError) {
       console.error("Diet plan query error:", dietError);
     }
 
-    // Check for workout plan
+    // Check for active workout plan
     const { data: workoutPlan, error: workoutError } = await supabaseAdmin
       .from("workout_plans")
       .select("id")
       .eq("user_id", userId)
+      .eq("is_active", true)
       .maybeSingle();
 
     if (workoutError) {

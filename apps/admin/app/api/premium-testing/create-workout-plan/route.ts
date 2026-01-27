@@ -7,7 +7,7 @@ const supabaseAdmin = createClient(
 );
 
 export async function POST(req: NextRequest) {
-  const { userId, planData } = await req.json();
+  const { userId, planData, planName, durationWeeks } = await req.json();
 
   if (!userId || !planData) {
     return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
     .from("workout_plans")
     .insert({
       user_id: userId,
-      plan_name: "Test Workout Plan",
-      start_date: new Date().toISOString().split("T")[0], // YYYY-MM-DD format
-      duration_weeks: 1,
+      plan_name: planName || "Workout Plan",
+      start_date: new Date().toISOString().split("T")[0],
+      duration_weeks: durationWeeks || 4,
       routine_data: planData, // Correct field name for workout_plans table
       is_active: true,
       created_at: new Date().toISOString(),
