@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -45,7 +44,7 @@ export default async function DashboardPage() {
             <Button variant="secondary" size="sm" className="bg-white text-emerald-600 hover:bg-gray-100">
               Download iOS
             </Button>
-            <Button variant="outline" size="sm" className="border-white text-white hover:bg-white/10">
+            <Button size="sm" className="bg-white/20 border border-white text-white hover:bg-white/30">
               Download Android
             </Button>
           </div>
@@ -142,12 +141,6 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* View Profile Link */}
-      <div className="mt-8 text-center">
-        <Link href={`/profile/${profile?.username || user.id}`}>
-          <Button variant="outline">View Public Profile</Button>
-        </Link>
-      </div>
     </div>
   );
 }

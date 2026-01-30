@@ -2,7 +2,8 @@ import { Header, Footer } from '@/components/marketing';
 import {
   SecretHeroSection,
   IndustryLiesSection,
-  SecretRevealSection,
+  AppFeaturesSection,
+  TransformationResultsSection,
   TransformationProofSection,
   SystemOverviewSection,
   FinalConversionSection,
@@ -15,7 +16,8 @@ export default function Home() {
       <main>
         <SecretHeroSection />
         <IndustryLiesSection />
-        <SecretRevealSection />
+        <AppFeaturesSection />
+        <TransformationResultsSection />
         <TransformationProofSection />
         <SystemOverviewSection />
         <FinalConversionSection />

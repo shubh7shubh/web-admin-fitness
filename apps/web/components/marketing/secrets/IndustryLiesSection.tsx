@@ -109,10 +109,10 @@ export function IndustryLiesSection() {
             I'll show you exactly what works instead
           </p>
           <a
-            href="#secrets"
+            href="#app-features"
             className="inline-flex items-center text-orange-600 hover:text-orange-700 font-semibold group"
           >
-            See the Real System
+            Explore the App
             <svg
               className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"
               fill="none"

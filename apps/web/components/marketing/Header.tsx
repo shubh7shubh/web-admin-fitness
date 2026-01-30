@@ -1,11 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase-browser";
+import type { User } from "@supabase/supabase-js";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    // Get initial session
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
     <header className="sticky top-0 z-[9999] bg-white/80 backdrop-blur-md border-b border-gray-100">
@@ -30,11 +53,16 @@ export function Header() {
             <Link href="/premium" className="text-gray-600 hover:text-gray-900 transition-colors">
               Plan
             </Link>
-            <Link href="/login">
-              <Button variant="outline" size="sm">
-                Login
-              </Button>
+            <Link href="/support" className="text-gray-600 hover:text-gray-900 transition-colors">
+              Support
             </Link>
+            {!loading && (
+              <Link href={user ? "/dashboard" : "/login"}>
+                <Button variant="outline" size="sm">
+                  {user ? "Dashboard" : "Login"}
+                </Button>
+              </Link>
+            )}
             <Link href="/onboarding">
               <Button size="sm" className="bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600">
                 Download App
@@ -76,11 +104,16 @@ export function Header() {
               <Link href="/premium" className="text-gray-600 hover:text-gray-900 transition-colors">
                 Plan
               </Link>
-              <Link href="/login">
-                <Button variant="outline" size="sm" className="w-full">
-                  Login
-                </Button>
+              <Link href="/support" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Support
               </Link>
+              {!loading && (
+                <Link href={user ? "/dashboard" : "/login"}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    {user ? "Dashboard" : "Login"}
+                  </Button>
+                </Link>
+              )}
               <Link href="/onboarding">
                 <Button size="sm" className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500">
                   Download App
